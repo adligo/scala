@@ -610,7 +610,7 @@ trait IterableOps[+A, +CC[_], +C] extends Any with IterableOnce[A] with Iterable
     * @tparam B
     * @return
     */
-  def groupConvert[K, B](key: A => (Boolean, K))(f: A => (Boolean, B)): immutable.Map[K, CC[B]] = {
+  def refineCollect[K, B](key: A => (Boolean, K))(f: A => (Boolean, B)): immutable.Map[K, CC[B]] = {
     val m = mutable.Map.empty[K, Builder[B, CC[B]]]
     for (elem <- this) {
       val k = key(elem)
@@ -629,6 +629,57 @@ trait IterableOps[+A, +CC[_], +C] extends Any with IterableOnce[A] with Iterable
     result
   }
 
+  /**
+    * Adligo.SIP?.A combines a map and filter operation into a single transversal
+    * instead of two.
+    * @param key
+    * @param f
+    * @tparam K
+    * @tparam B
+    * @return
+    */
+  def groupCollect[K, B](key: A => K)(f: A => (Boolean, B)): immutable.Map[K, CC[B]] = {
+    val m = mutable.Map.empty[K, Builder[B, CC[B]]]
+    for (elem <- this) {
+      val k = key(elem)
+      val bldr = m.getOrElseUpdate(k, iterableFactory.newBuilder[B])
+      val bv = f(elem)
+      if (bv._1) {
+        bldr += bv._2
+      }
+    }
+    var result = immutable.Map.empty[K, CC[B]]
+    m.foreach { case (k, v) =>
+      result = result + ((k, v.result()))
+    }
+    result
+  }
+
+  /**
+    * Adligo.SIP?.A combines a map and filter operation into a single transversal
+    * instead of two.
+    * @param key
+    * @param f
+    * @tparam K
+    * @tparam B
+    * @return
+    */
+  def refineMap[K, B](key: A => (Boolean, K))(f: A => B): immutable.Map[K, CC[B]] = {
+    val m = mutable.Map.empty[K, Builder[B, CC[B]]]
+    for (elem <- this) {
+      val k = key(elem)
+      if (k._1) {
+        val bldr = m.getOrElseUpdate(k._2, iterableFactory.newBuilder[B])
+        val bv = f(elem)
+        bldr += bv
+      }
+    }
+    var result = immutable.Map.empty[K, CC[B]]
+    m.foreach { case (k, v) =>
+      result = result + ((k, v.result()))
+    }
+    result
+  }
   /**
     * Partitions this $coll into a map according to a discriminator function `key`. All the values that
     * have the same discriminator are then transformed by the `value` function and then reduced into a
@@ -668,7 +719,7 @@ trait IterableOps[+A, +CC[_], +C] extends Any with IterableOnce[A] with Iterable
     * @tparam B
     * @return
     */
-  def groupConvertReduce[K, B](key: A => (Boolean, K))(f: A => (Boolean, B))(reduce: (B, B) => B): immutable.Map[K, B] = {
+  def refineCollectReduce[K, B](key: A => (Boolean, K))(f: A => (Boolean, B))(reduce: (B, B) => B): immutable.Map[K, B] = {
     val m = mutable.Map.empty[K, B]
     for (elem <- this) {
       val k = key(elem)
@@ -694,6 +745,74 @@ trait IterableOps[+A, +CC[_], +C] extends Any with IterableOnce[A] with Iterable
     m.to(immutable.Map)
   }
 
+
+  /**
+    * Adligo.SIP?.A combines a map and filter operation into a single transversal
+    * instead of two.
+    *
+    * @param key
+    * @param f
+    * @param reduce
+    * @tparam K
+    * @tparam B
+    * @return
+    */
+  def refineMapReduce[K, B](key: A => (Boolean, K))(f: A => B)(reduce: (B, B) => B): immutable.Map[K, B] = {
+    val m = mutable.Map.empty[K, B]
+    for (elem <- this) {
+      val k = key(elem)
+      if (k._1) {
+        val kv = k._2
+        m.get(kv) match {
+          case Some(b) => {
+            val vb = f(elem)
+              val r = reduce(b, vb)
+              m.put(kv, r)
+          }
+          case None => {
+            val v = f(elem)
+            m.put(kv, v)
+          }
+        }
+      }
+    }
+    m.to(immutable.Map)
+  }
+
+
+  /**
+    * Adligo.SIP?.A combines a map and filter operation into a single transversal
+    * instead of two.
+    *
+    * @param key
+    * @param f
+    * @param reduce
+    * @tparam K
+    * @tparam B
+    * @return
+    */
+  def groupCollectReduce[K, B](key: A => K)(f: A => (Boolean, B))(reduce: (B, B) => B): immutable.Map[K, B] = {
+    val m = mutable.Map.empty[K, B]
+    for (elem <- this) {
+      val kv = key(elem)
+      m.get(kv) match {
+        case Some(b) => {
+          val vb = f(elem)
+          if (vb._1) {
+            val r = reduce(b, vb._2)
+            m.put(kv, r)
+          }
+        }
+        case None => {
+          val v = f(elem)
+          if (v._1) {
+            m.put(kv, v._2)
+          }
+        }
+      }
+    }
+    m.to(immutable.Map)
+  }
   /** Computes a prefix scan of the elements of the collection.
     *
     *  Note: The neutral element `z` may be applied more than once.

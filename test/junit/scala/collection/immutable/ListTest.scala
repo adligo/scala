@@ -11,6 +11,7 @@ import scala.ref.WeakReference
 class ListTest {
   
   /**
+   * REMOVED FROM in favor of collect!
    * Adligo.SIP?.A combines a map and filter operation into a single transversal
    * instead of two.
    */
@@ -37,12 +38,94 @@ class ListTest {
    * instead of two.
    */
   @Test
-  def testGroupConvert(): Unit = {
+  def testGroupCollect(): Unit = {
     val fruit : List[Fruit] = CollectionOfFruit.allFruit
     val applesAndPears = List(CollectionOfFruit.apple, CollectionOfFruit.pear)
     
     //find large fruit
-    val heavyApplesAndPears : Map[String, List[Int]] = fruit.groupConvert( 
+    val fruitMap : Map[String, List[Int]] = fruit.groupCollect( 
+        g => g.getSpecies()
+        )( 
+        f => {
+          if (f.getWeight() > 2.0 ) {
+            (true, f.getRfid())
+          } else {
+            (false, f.getRfid())
+          }
+      }
+    )
+    val appleIds = fruitMap.get(CollectionOfFruit.apple).head
+    //appleIds.foreach( id => println(id))
+    Assert.assertTrue(appleIds.contains(2))
+    Assert.assertTrue(appleIds.contains(3))
+    Assert.assertTrue(appleIds.size == 2)
+    
+    val bananaIds = fruitMap.get(CollectionOfFruit.banana).head
+    Assert.assertTrue(bananaIds.contains(4))
+    Assert.assertTrue(bananaIds.contains(5))
+    Assert.assertTrue(bananaIds.size == 2)
+    
+    val pearIds = fruitMap.get(CollectionOfFruit.pear).head
+    Assert.assertTrue(pearIds.contains(7))
+    Assert.assertTrue(pearIds.contains(8))
+    Assert.assertTrue(pearIds.size == 2)
+    Assert.assertTrue(fruitMap.size == 3)
+    
+  }
+  
+       /**
+   * Adligo.SIP?.A combines a map and filter operation into a single transversal
+   * instead of two.
+   */
+  @Test
+  def testGroupCollectReduce(): Unit = {
+    val fruit : List[Fruit] = CollectionOfFruit.allFruit
+    val applesAndPears = List(CollectionOfFruit.apple, CollectionOfFruit.pear)
+    
+    //sum large fruit
+    val friutMap : Map[String, Double] = fruit.groupCollectReduce( 
+        g => g.getSpecies()
+        )( 
+        f => {
+          if (f.getWeight() > 2.0 ) {
+            (true, f.getWeight())
+          } else {
+            (false, f.getWeight())
+          }
+        })( _ + _)
+    
+    //friutMap.foreach( id => println(id))
+    
+    
+    def eq(a: Double, b: Double): Boolean = {
+      val diff1 = Math.abs(a -  b)
+      if (-0.00001 <= diff1 && diff1 <= 0.000001) true else false
+    }
+    
+    val heavyApples = friutMap.get(CollectionOfFruit.apple)
+    Assert.assertTrue("'" + heavyApples.get + "'", eq(7.5, heavyApples.get))
+    
+    val heavyBananas = friutMap.get(CollectionOfFruit.banana)
+    Assert.assertTrue("'" + heavyBananas.get + "'", eq(6.2, heavyBananas.get))
+    
+    val heavyPears = friutMap.get(CollectionOfFruit.pear)
+    Assert.assertTrue("'" + heavyPears.get + "'", eq(4.5, heavyPears.get))
+    
+    Assert.assertTrue(friutMap.size == 3)
+    
+  }
+  
+    /**
+   * Adligo.SIP?.A combines a map and filter operation into a single transversal
+   * instead of two.
+   */
+  @Test
+  def testRefineCollect(): Unit = {
+    val fruit : List[Fruit] = CollectionOfFruit.allFruit
+    val applesAndPears = List(CollectionOfFruit.apple, CollectionOfFruit.pear)
+    
+    //find large fruit
+    val heavyApplesAndPears : Map[String, List[Int]] = fruit.refineCollect( 
         g => {
           val species = g.getSpecies()
           if (applesAndPears.contains(species)) {
@@ -78,12 +161,12 @@ class ListTest {
    * instead of two.
    */
   @Test
-  def testGroupConvertReduce(): Unit = {
+  def testRefineCollectReduce(): Unit = {
     val fruit : List[Fruit] = CollectionOfFruit.allFruit
     val applesAndPears = List(CollectionOfFruit.apple, CollectionOfFruit.pear)
     
     //sum large fruit
-    val heavyApplesAndPears : Map[String, Double] = fruit.groupConvertReduce( 
+    val heavyApplesAndPears : Map[String, Double] = fruit.refineCollectReduce( 
         g => {
           val species = g.getSpecies()
           if (applesAndPears.contains(species)) {
@@ -113,6 +196,82 @@ class ListTest {
     val heavyPears = heavyApplesAndPears.get(CollectionOfFruit.pear)
     Assert.assertTrue("'" + heavyPears.get + "'", eq(4.5, heavyPears.get))
     Assert.assertTrue(heavyApplesAndPears.size == 2)
+    
+  }
+  
+  
+    /**
+   * Adligo.SIP?.A combines a map and filter operation into a single transversal
+   * instead of two.
+   */
+  @Test
+  def testRefineMap(): Unit = {
+    val fruit : List[Fruit] = CollectionOfFruit.allFruit
+    val applesAndPears = List(CollectionOfFruit.apple, CollectionOfFruit.pear)
+    
+    //find large fruit
+    val heavyApplesAndPears : Map[String, List[Int]] = fruit.refineMap( 
+        g => {
+          val species = g.getSpecies()
+          if (applesAndPears.contains(species)) {
+            (true, species)
+          } else {
+            (false, species)
+          }
+        })( m => m.getRfid())
+        
+    val appleIds = heavyApplesAndPears.get(CollectionOfFruit.apple).head
+    //appleIds.foreach( id => println(id))
+    Assert.assertTrue(appleIds.contains(1))
+    Assert.assertTrue(appleIds.contains(2))
+    Assert.assertTrue(appleIds.contains(3))
+    Assert.assertTrue(appleIds.size == 3)
+    
+    val pearIds = heavyApplesAndPears.get(CollectionOfFruit.pear).head
+    Assert.assertTrue(pearIds.contains(6))
+    Assert.assertTrue(pearIds.contains(7))
+    Assert.assertTrue(pearIds.contains(8))
+    Assert.assertTrue(pearIds.size == 3)
+    Assert.assertTrue(heavyApplesAndPears.size == 2)
+    
+  }
+  
+      /**
+   * Adligo.SIP?.A combines a map and filter operation into a single transversal
+   * instead of two.
+   */
+  @Test
+  def testRefineMapReduce(): Unit = {
+    val fruit : List[Fruit] = CollectionOfFruit.allFruit
+    val applesAndPears = List(CollectionOfFruit.apple, CollectionOfFruit.pear)
+    
+    //sum large fruit
+    val fruitMap : Map[String, Double] = fruit.refineMapReduce( 
+        g => {
+          val species = g.getSpecies()
+          if (applesAndPears.contains(species)) {
+            (true, species)
+          } else {
+            (false, species)
+          }
+        })( 
+        f => f.getWeight())( _ + _)
+    
+    //heavyApplesAndPears.foreach( id => println(id))
+    
+    
+    def eq(a: Double, b: Double): Boolean = {
+      val diff1 = Math.abs(a -  b)
+      if (-0.00001 <= diff1 && diff1 <= 0.000001) true else false
+    }
+    
+    val apples = fruitMap.get(CollectionOfFruit.apple)
+    Assert.assertTrue("'" + apples.get + "'", eq(8.6, apples.get))
+    
+    
+    val pears = fruitMap.get(CollectionOfFruit.pear)
+    Assert.assertTrue("'" + pears.get + "'", eq(5.6, pears.get))
+    Assert.assertTrue(fruitMap.size == 2)
     
   }
   
