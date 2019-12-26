@@ -12,8 +12,7 @@ class ListTest {
   
   /**
    * REMOVED FROM in favor of collect!
-   * Adligo.SIP?.A combines a map and filter operation into a single transversal
-   * instead of two.
+   * @see Adligo.Scala.LIB?.A 
    */
   @Test
   def testConvert(): Unit = {
@@ -34,7 +33,7 @@ class ListTest {
   }
   
     /**
-   * Adligo.SIP?.A combines a map and filter operation into a single transversal
+   * Adligo.Scala.LIB?.A combines a map and filter operation into a single transversal
    * instead of two.
    */
   @Test
@@ -74,7 +73,7 @@ class ListTest {
   }
   
        /**
-   * Adligo.SIP?.A combines a map and filter operation into a single transversal
+   * Adligo.Scala.LIB?.A combines a map and filter operation into a single transversal
    * instead of two.
    */
   @Test
@@ -116,7 +115,7 @@ class ListTest {
   }
   
     /**
-   * Adligo.SIP?.A combines a map and filter operation into a single transversal
+   * Adligo.Scala.LIB?.A combines a map and filter operation into a single transversal
    * instead of two.
    */
   @Test
@@ -157,7 +156,7 @@ class ListTest {
   }
   
       /**
-   * Adligo.SIP?.A combines a map and filter operation into a single transversal
+   * Adligo.Scala.LIB?.A combines a map and filter operation into a single transversal
    * instead of two.
    */
   @Test
@@ -201,7 +200,7 @@ class ListTest {
   
   
     /**
-   * Adligo.SIP?.A combines a map and filter operation into a single transversal
+   * Adligo.Scala.LIB?.A combines a map and filter operation into a single transversal
    * instead of two.
    */
   @Test
@@ -237,7 +236,7 @@ class ListTest {
   }
   
       /**
-   * Adligo.SIP?.A combines a map and filter operation into a single transversal
+   * Adligo.Scala.LIB?.A combines a map and filter operation into a single transversal
    * instead of two.
    */
   @Test

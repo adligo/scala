@@ -602,7 +602,7 @@ trait IterableOps[+A, +CC[_], +C] extends Any with IterableOnce[A] with Iterable
   }
 
   /**
-    * Adligo.SIP?.A combines a map and filter operation into a single transversal
+    * Adligo.Scala.LIB?.A combines a map and filter operation into a single transversal
     * instead of two.
     * @param key
     * @param f
@@ -630,7 +630,7 @@ trait IterableOps[+A, +CC[_], +C] extends Any with IterableOnce[A] with Iterable
   }
 
   /**
-    * Adligo.SIP?.A combines a map and filter operation into a single transversal
+    * Adligo.Scala.LIB?.A combines a map and filter operation into a single transversal
     * instead of two.
     * @param key
     * @param f
@@ -656,7 +656,7 @@ trait IterableOps[+A, +CC[_], +C] extends Any with IterableOnce[A] with Iterable
   }
 
   /**
-    * Adligo.SIP?.A combines a map and filter operation into a single transversal
+    * Adligo.Scala.LIB?.A combines a map and filter operation into a single transversal
     * instead of two.
     * @param key
     * @param f
@@ -709,7 +709,7 @@ trait IterableOps[+A, +CC[_], +C] extends Any with IterableOnce[A] with Iterable
   }
 
   /**
-    * Adligo.SIP?.A combines a map and filter operation into a single transversal
+    * Adligo.Scala.LIB?.A combines a map and filter operation into a single transversal
     * instead of two.
     *
     * @param key
@@ -747,7 +747,7 @@ trait IterableOps[+A, +CC[_], +C] extends Any with IterableOnce[A] with Iterable
 
 
   /**
-    * Adligo.SIP?.A combines a map and filter operation into a single transversal
+    * Adligo.Scala.LIB?.A combines a map and filter operation into a single transversal
     * instead of two.
     *
     * @param key
@@ -781,7 +781,7 @@ trait IterableOps[+A, +CC[_], +C] extends Any with IterableOnce[A] with Iterable
 
 
   /**
-    * Adligo.SIP?.A combines a map and filter operation into a single transversal
+    * Adligo.Scala.LIB?.A combines a map and filter operation into a single transversal
     * instead of two.
     *
     * @param key
