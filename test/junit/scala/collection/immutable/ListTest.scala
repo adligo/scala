@@ -73,6 +73,49 @@ class ListTest {
     
   }
   
+      /**
+   * Adligo.SIP?.A combines a map and filter operation into a single transversal
+   * instead of two.
+   */
+  @Test
+  def testGroupConvertReduce(): Unit = {
+    val fruit : List[Fruit] = CollectionOfFruit.allFruit
+    val applesAndPears = List(CollectionOfFruit.apple, CollectionOfFruit.pear)
+    
+    //sum large fruit
+    val heavyApplesAndPears : Map[String, Double] = fruit.groupConvertReduce( 
+        g => {
+          val species = g.getSpecies()
+          if (applesAndPears.contains(species)) {
+            (true, species)
+          } else {
+            (false, species)
+          }
+        })( 
+        f => {
+          if (f.getWeight() > 2.0 ) {
+            (true, f.getWeight())
+          } else {
+            (false, f.getWeight())
+          }
+        })( _ + _)
+    
+    heavyApplesAndPears.foreach( id => println(id))
+    val heavyApples = heavyApplesAndPears.get(CollectionOfFruit.apple)
+    
+    def eq(a: Double, b: Double): Boolean = {
+      val diff1 = Math.abs(a -  b)
+      if (-0.00001 <= diff1 && diff1 <= 0.000001) true else false
+    }
+    
+    Assert.assertTrue("'" + heavyApples.get + "'", eq(7.5, heavyApples.get))
+    
+    val heavyPears = heavyApplesAndPears.get(CollectionOfFruit.pear)
+    Assert.assertTrue("'" + heavyPears.get + "'", eq(4.5, heavyPears.get))
+    Assert.assertTrue(heavyApplesAndPears.size == 2)
+    
+  }
+  
   /**
    * Test that empty iterator does not hold reference
    * to complete List
