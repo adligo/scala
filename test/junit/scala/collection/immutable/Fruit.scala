@@ -22,13 +22,17 @@ class Fruit(species: String, rfid: Int, ripeness: Double, weight: Double) {
 object CollectionOfFruit {
   val apple = "apple"
   val banana = "banana"
+  val pear = "pear"
   
   val allFruit = List[Fruit] (
       new Fruit(apple,1, 2.7, 1.1),
       new Fruit(apple,2, 3.1, 3.3),
       new Fruit(apple,3, 2.7, 4.2),
       new Fruit(banana,4, 2.7, 3.0),
-      new Fruit(banana,5, 3.7, 3.2)
+      new Fruit(banana,5, 3.7, 3.2),
+      new Fruit(pear,6, 2.7, 1.1),
+      new Fruit(pear,7, 2.8, 2.2),
+      new Fruit(pear,8, 2.9, 2.3)
       )
 
 }

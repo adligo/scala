@@ -25,11 +25,52 @@ class ListTest {
         //it could be changed to an optional, but this seems faster
       }
     })
-    ids.foreach( id => println(id))
+    //ids.foreach( id => println(id))
     Assert.assertTrue(ids.contains(1))
     Assert.assertTrue(ids.contains(2))
     Assert.assertTrue(ids.contains(3))
     Assert.assertTrue(ids.size == 3)
+  }
+  
+    /**
+   * Adligo.SIP?.A combines a map and filter operation into a single transversal
+   * instead of two.
+   */
+  @Test
+  def testGroupConvert(): Unit = {
+    val fruit : List[Fruit] = CollectionOfFruit.allFruit
+    val applesAndPears = List(CollectionOfFruit.apple, CollectionOfFruit.pear)
+    
+    //sum large fruit
+    val heavyApplesAndPears : Map[String, List[Int]] = fruit.groupConvert( 
+        g => {
+          val species = g.getSpecies()
+          if (applesAndPears.contains(species)) {
+            (true, species)
+          } else {
+            (false, species)
+          }
+        })( 
+        f => {
+          if (f.getWeight() > 2.0 ) {
+            (true, f.getRfid())
+          } else {
+            (false, f.getRfid())
+          }
+      }
+    )
+    val appleIds = heavyApplesAndPears.get(CollectionOfFruit.apple).head
+    //appleIds.foreach( id => println(id))
+    Assert.assertTrue(appleIds.contains(2))
+    Assert.assertTrue(appleIds.contains(3))
+    Assert.assertTrue(appleIds.size == 2)
+    
+    val pearIds = heavyApplesAndPears.get(CollectionOfFruit.pear).head
+    Assert.assertTrue(pearIds.contains(7))
+    Assert.assertTrue(pearIds.contains(8))
+    Assert.assertTrue(pearIds.size == 2)
+    Assert.assertTrue(heavyApplesAndPears.size == 2)
+    
   }
   
   /**

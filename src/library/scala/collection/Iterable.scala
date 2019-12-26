@@ -602,6 +602,34 @@ trait IterableOps[+A, +CC[_], +C] extends Any with IterableOnce[A] with Iterable
   }
 
   /**
+    * Adligo.SIP?.A combines a map and filter operation into a single transversal
+    * instead of two.
+    * @param key
+    * @param f
+    * @tparam K
+    * @tparam B
+    * @return
+    */
+  def groupConvert[K, B](key: A => (Boolean, K))(f: A => (Boolean, B)): immutable.Map[K, CC[B]] = {
+    val m = mutable.Map.empty[K, Builder[B, CC[B]]]
+    for (elem <- this) {
+      val k = key(elem)
+      if (k._1) {
+        val bldr = m.getOrElseUpdate(k._2, iterableFactory.newBuilder[B])
+        val bv = f(elem)
+        if (bv._1) {
+          bldr += bv._2
+        }
+      }
+    }
+    var result = immutable.Map.empty[K, CC[B]]
+    m.foreach { case (k, v) =>
+      result = result + ((k, v.result()))
+    }
+    result
+  }
+
+  /**
     * Partitions this $coll into a map according to a discriminator function `key`. All the values that
     * have the same discriminator are then transformed by the `value` function and then reduced into a
     * single value with the `reduce` function.
