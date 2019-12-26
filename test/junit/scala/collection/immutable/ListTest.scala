@@ -9,6 +9,29 @@ import scala.ref.WeakReference
 
 @RunWith(classOf[JUnit4])
 class ListTest {
+  
+  /**
+   * Adligo.SIP?.A combines a map and filter operation into a single transversal
+   * instead of two.
+   */
+  @Test
+  def testConvert(): Unit = {
+    val fruit : List[Fruit] = CollectionOfFruit.allFruit
+    val ids : List[Int] = fruit.convert( f => {
+      if (f.getSpecies() == CollectionOfFruit.apple) {
+        (true, f.getRfid())
+      } else {
+        (false, 0)//note the zero doesn't matter, 
+        //it could be changed to an optional, but this seems faster
+      }
+    })
+    ids.foreach( id => println(id))
+    Assert.assertTrue(ids.contains(1))
+    Assert.assertTrue(ids.contains(2))
+    Assert.assertTrue(ids.contains(3))
+    Assert.assertTrue(ids.size == 3)
+  }
+  
   /**
    * Test that empty iterator does not hold reference
    * to complete List

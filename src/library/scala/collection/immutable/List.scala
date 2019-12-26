@@ -214,6 +214,47 @@ sealed abstract class List[+A]
     }
   }
 
+  /**
+    * Adligo.SIP?.A combines a map and filter operation into a single transversal
+    * * instead of two.
+    *
+    * @param f
+    * @tparam B
+    * @return
+    */
+  final def convert[B](f: A => (Boolean, B)): List[B] = {
+    def findFirst(in : List[A]): Tuple2[Boolean, List[B]] = in match {
+      case Nil => (false, Nil)
+      case x :: xy => {
+        val t = f(x)
+        if (t._1) {
+          (true, List(t._2))
+        } else {
+          findFirst(in.tail)
+        }
+      }
+    }
+    val first : Tuple2[Boolean, List[B]] = findFirst(this)
+    if ( !first._1) {
+      Nil
+    } else {
+      val h = new ::[B](first._2.head, Nil)
+      var t: ::[B] = h
+      var rest = tail
+      while (rest ne Nil) {
+        val i = f(rest.head)
+        if (i._1) {
+          val nx = new ::(i._2, Nil)
+          t.next = nx
+          t = nx
+        }
+        rest = rest.tail
+      }
+      releaseFence()
+      h
+    }
+  }
+
   final override def map[B](f: A => B): List[B] = {
     if (this eq Nil) Nil else {
       val h = new ::[B](f(head), Nil)
