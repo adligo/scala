@@ -657,6 +657,43 @@ trait IterableOps[+A, +CC[_], +C] extends Any with IterableOnce[A] with Iterable
     m.to(immutable.Map)
   }
 
+  /**
+    * Adligo.SIP?.A combines a map and filter operation into a single transversal
+    * instead of two.
+    *
+    * @param key
+    * @param f
+    * @param reduce
+    * @tparam K
+    * @tparam B
+    * @return
+    */
+  def groupConvertReduce[K, B](key: A => (Boolean, K))(f: A => (Boolean, B))(reduce: (B, B) => B): immutable.Map[K, B] = {
+    val m = mutable.Map.empty[K, B]
+    for (elem <- this) {
+      val k = key(elem)
+      if (k._1) {
+        val kv = k._2
+        m.get(kv) match {
+          case Some(b) => {
+            val vb = f(elem)
+            if (vb._1) {
+              val r = reduce(b, vb._2)
+              m.put(kv, r)
+            }
+          }
+          case None => {
+            val v = f(elem)
+            if (v._1) {
+              m.put(kv, v._2)
+            }
+          }
+        }
+      }
+    }
+    m.to(immutable.Map)
+  }
+
   /** Computes a prefix scan of the elements of the collection.
     *
     *  Note: The neutral element `z` may be applied more than once.

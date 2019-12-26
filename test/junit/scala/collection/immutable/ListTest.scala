@@ -41,7 +41,7 @@ class ListTest {
     val fruit : List[Fruit] = CollectionOfFruit.allFruit
     val applesAndPears = List(CollectionOfFruit.apple, CollectionOfFruit.pear)
     
-    //sum large fruit
+    //find large fruit
     val heavyApplesAndPears : Map[String, List[Int]] = fruit.groupConvert( 
         g => {
           val species = g.getSpecies()
