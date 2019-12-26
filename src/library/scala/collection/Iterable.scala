@@ -17,6 +17,7 @@ import scala.language.higherKinds
 import scala.annotation.unchecked.uncheckedVariance
 import scala.collection.mutable.Builder
 import scala.collection.View.{LeftPartitionMapped, RightPartitionMapped}
+import scala.runtime.Statics
 
 /** Base trait for generic collections.
   *
@@ -226,6 +227,72 @@ trait IterableOps[+A, +CC[_], +C] extends Any with IterableOnce[A] with Iterable
   def headOption: Option[A] = {
     val it = iterator
     if(it.hasNext) Some(it.next()) else None
+  }
+
+
+  /**
+    * Adligo.Scala.LIB?.A combines a map and filter operation into a single transversal
+    * instead of two.
+    * @param key
+    * @param f
+    * @tparam K
+    * @tparam B
+    * @return
+    */
+  def groupCollect[K, B](key: A => K)(pf:PartialFunction[A, B]): immutable.Map[K, CC[B]] = {
+    val m = mutable.Map.empty[K, Builder[B, CC[B]]]
+
+    for (elem <- this) {
+      val k = key(elem)
+      val bldr = m.getOrElseUpdate(k, iterableFactory.newBuilder[B])
+      pf.lift(elem) match {
+        case Some(x) => bldr += x
+        case None =>
+      }
+    }
+    var result = immutable.Map.empty[K, CC[B]]
+    m.foreach { case (k, v) =>
+      result = result + ((k, v.result()))
+    }
+    result
+  }
+
+  /**
+    * Adligo.Scala.LIB?.A combines a map and filter operation into a single transversal
+    * instead of two.
+    *
+    * @param key
+    * @param f
+    * @param reduce
+    * @tparam K
+    * @tparam B
+    * @return
+    */
+  def groupCollectReduce[K, B](key: A => K)(pf: PartialFunction[A, B])(reduce: (B, B) => B): immutable.Map[K, B] = {
+    val m = mutable.Map.empty[K, B]
+    for (elem <- this) {
+      val kv = key(elem)
+      m.get(kv) match {
+        case Some(b) => {
+          pf.lift(elem) match {
+            case Some(x) => {
+              val r = reduce(b, x)
+              m.put(kv, r)
+            }
+            case None =>
+          }
+        }
+        case None => {
+          pf.lift(elem) match {
+            case Some(x) => {
+              m.put(kv, x)
+            }
+            case None =>
+          }
+        }
+      }
+    }
+    m.to(immutable.Map)
   }
 
   /** Selects the last element.
@@ -610,16 +677,20 @@ trait IterableOps[+A, +CC[_], +C] extends Any with IterableOnce[A] with Iterable
     * @tparam B
     * @return
     */
-  def refineCollect[K, B](key: A => (Boolean, K))(f: A => (Boolean, B)): immutable.Map[K, CC[B]] = {
+  def refineCollect[K, B](kf: PartialFunction[A, K])(vf: PartialFunction[A, B]): immutable.Map[K, CC[B]] = {
     val m = mutable.Map.empty[K, Builder[B, CC[B]]]
     for (elem <- this) {
-      val k = key(elem)
-      if (k._1) {
-        val bldr = m.getOrElseUpdate(k._2, iterableFactory.newBuilder[B])
-        val bv = f(elem)
-        if (bv._1) {
-          bldr += bv._2
+      kf.lift(elem) match {
+        case Some(x) => {
+          val bldr = m.getOrElseUpdate(x, iterableFactory.newBuilder[B])
+          vf.lift(elem) match {
+            case Some(y) => {
+              bldr += y
+            }
+            case None =>
+          }
         }
+        case None =>
       }
     }
     var result = immutable.Map.empty[K, CC[B]]
@@ -628,6 +699,7 @@ trait IterableOps[+A, +CC[_], +C] extends Any with IterableOnce[A] with Iterable
     }
     result
   }
+
 
   /**
     * Adligo.Scala.LIB?.A combines a map and filter operation into a single transversal
@@ -638,14 +710,16 @@ trait IterableOps[+A, +CC[_], +C] extends Any with IterableOnce[A] with Iterable
     * @tparam B
     * @return
     */
-  def groupCollect[K, B](key: A => K)(f: A => (Boolean, B)): immutable.Map[K, CC[B]] = {
+  def refineMap[K, B](kf: PartialFunction[A, K])(f: A => B): immutable.Map[K, CC[B]] = {
     val m = mutable.Map.empty[K, Builder[B, CC[B]]]
     for (elem <- this) {
-      val k = key(elem)
-      val bldr = m.getOrElseUpdate(k, iterableFactory.newBuilder[B])
-      val bv = f(elem)
-      if (bv._1) {
-        bldr += bv._2
+      kf.lift(elem) match {
+        case Some(x) => {
+          val bldr = m.getOrElseUpdate(x, iterableFactory.newBuilder[B])
+          val bv = f(elem)
+          bldr += bv
+        }
+        case None =>
       }
     }
     var result = immutable.Map.empty[K, CC[B]]
@@ -655,31 +729,6 @@ trait IterableOps[+A, +CC[_], +C] extends Any with IterableOnce[A] with Iterable
     result
   }
 
-  /**
-    * Adligo.Scala.LIB?.A combines a map and filter operation into a single transversal
-    * instead of two.
-    * @param key
-    * @param f
-    * @tparam K
-    * @tparam B
-    * @return
-    */
-  def refineMap[K, B](key: A => (Boolean, K))(f: A => B): immutable.Map[K, CC[B]] = {
-    val m = mutable.Map.empty[K, Builder[B, CC[B]]]
-    for (elem <- this) {
-      val k = key(elem)
-      if (k._1) {
-        val bldr = m.getOrElseUpdate(k._2, iterableFactory.newBuilder[B])
-        val bv = f(elem)
-        bldr += bv
-      }
-    }
-    var result = immutable.Map.empty[K, CC[B]]
-    m.foreach { case (k, v) =>
-      result = result + ((k, v.result()))
-    }
-    result
-  }
   /**
     * Partitions this $coll into a map according to a discriminator function `key`. All the values that
     * have the same discriminator are then transformed by the `value` function and then reduced into a
@@ -712,39 +761,43 @@ trait IterableOps[+A, +CC[_], +C] extends Any with IterableOnce[A] with Iterable
     * Adligo.Scala.LIB?.A combines a map and filter operation into a single transversal
     * instead of two.
     *
-    * @param key
-    * @param f
+    * @param kf
+    * @param cf
     * @param reduce
     * @tparam K
     * @tparam B
     * @return
     */
-  def refineCollectReduce[K, B](key: A => (Boolean, K))(f: A => (Boolean, B))(reduce: (B, B) => B): immutable.Map[K, B] = {
+  def refineCollectReduce[K, B](kf: PartialFunction[A, K])(cf: PartialFunction[A, B])(reduce: (B, B) => B): immutable.Map[K, B] = {
     val m = mutable.Map.empty[K, B]
     for (elem <- this) {
-      val k = key(elem)
-      if (k._1) {
-        val kv = k._2
-        m.get(kv) match {
-          case Some(b) => {
-            val vb = f(elem)
-            if (vb._1) {
-              val r = reduce(b, vb._2)
-              m.put(kv, r)
+      kf.lift(elem) match {
+        case Some(key) => {
+          m.get(key) match {
+            case Some(b) => {
+              cf.lift(elem) match {
+                case Some(c) => {
+                  val r = reduce(b, c)
+                  m.put(key, r)
+                }
+                case None =>
+              }
             }
-          }
-          case None => {
-            val v = f(elem)
-            if (v._1) {
-              m.put(kv, v._2)
+            case None => {
+              cf.lift(elem) match {
+                case Some(c) => {
+                  m.put(key, c)
+                }
+                case None =>
+              }
             }
           }
         }
+        case None =>
       }
     }
     m.to(immutable.Map)
   }
-
 
   /**
     * Adligo.Scala.LIB?.A combines a map and filter operation into a single transversal
@@ -757,62 +810,29 @@ trait IterableOps[+A, +CC[_], +C] extends Any with IterableOnce[A] with Iterable
     * @tparam B
     * @return
     */
-  def refineMapReduce[K, B](key: A => (Boolean, K))(f: A => B)(reduce: (B, B) => B): immutable.Map[K, B] = {
+  def refineMapReduce[K, B](kf: PartialFunction[A, K])(f: A => B)(reduce: (B, B) => B): immutable.Map[K, B] = {
     val m = mutable.Map.empty[K, B]
     for (elem <- this) {
-      val k = key(elem)
-      if (k._1) {
-        val kv = k._2
-        m.get(kv) match {
-          case Some(b) => {
-            val vb = f(elem)
-              val r = reduce(b, vb)
-              m.put(kv, r)
-          }
-          case None => {
-            val v = f(elem)
-            m.put(kv, v)
+      kf.lift(elem) match {
+        case Some(key) => {
+          m.get(key) match {
+            case Some(v) => {
+              val vb = f(elem)
+              val r = reduce(v, vb)
+              m.put(key, r)
+            }
+            case None => {
+              val v = f(elem)
+              m.put(key, v)
+            }
           }
         }
+        case None =>
       }
     }
     m.to(immutable.Map)
   }
 
-
-  /**
-    * Adligo.Scala.LIB?.A combines a map and filter operation into a single transversal
-    * instead of two.
-    *
-    * @param key
-    * @param f
-    * @param reduce
-    * @tparam K
-    * @tparam B
-    * @return
-    */
-  def groupCollectReduce[K, B](key: A => K)(f: A => (Boolean, B))(reduce: (B, B) => B): immutable.Map[K, B] = {
-    val m = mutable.Map.empty[K, B]
-    for (elem <- this) {
-      val kv = key(elem)
-      m.get(kv) match {
-        case Some(b) => {
-          val vb = f(elem)
-          if (vb._1) {
-            val r = reduce(b, vb._2)
-            m.put(kv, r)
-          }
-        }
-        case None => {
-          val v = f(elem)
-          if (v._1) {
-            m.put(kv, v._2)
-          }
-        }
-      }
-    }
-    m.to(immutable.Map)
-  }
   /** Computes a prefix scan of the elements of the collection.
     *
     *  Note: The neutral element `z` may be applied more than once.

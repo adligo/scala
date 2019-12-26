@@ -30,6 +30,7 @@ class ListTest {
     Assert.assertTrue(ids.contains(2))
     Assert.assertTrue(ids.contains(3))
     Assert.assertTrue(ids.size == 3)
+    
   }
   
     /**
@@ -44,20 +45,14 @@ class ListTest {
     //find large fruit
     val fruitMap : Map[String, List[Int]] = fruit.groupCollect( 
         g => g.getSpecies()
-        )( 
-        f => {
-          if (f.getWeight() > 2.0 ) {
-            (true, f.getRfid())
-          } else {
-            (false, f.getRfid())
-          }
-      }
-    )
+        ) {
+          case f if (f.getWeight() > 2.0 ) => f.getRfid()
+        }
     val appleIds = fruitMap.get(CollectionOfFruit.apple).head
     //appleIds.foreach( id => println(id))
     Assert.assertTrue(appleIds.contains(2))
     Assert.assertTrue(appleIds.contains(3))
-    Assert.assertTrue(appleIds.size == 2)
+    Assert.assertTrue("" + appleIds, appleIds.size == 2)
     
     val bananaIds = fruitMap.get(CollectionOfFruit.banana).head
     Assert.assertTrue(bananaIds.contains(4))
@@ -82,16 +77,9 @@ class ListTest {
     val applesAndPears = List(CollectionOfFruit.apple, CollectionOfFruit.pear)
     
     //sum large fruit
-    val friutMap : Map[String, Double] = fruit.groupCollectReduce( 
-        g => g.getSpecies()
-        )( 
-        f => {
-          if (f.getWeight() > 2.0 ) {
-            (true, f.getWeight())
-          } else {
-            (false, f.getWeight())
-          }
-        })( _ + _)
+    val friutMap : Map[String, Double] = fruit.groupCollectReduce( g => g.getSpecies()) {
+      case f if f.getWeight() > 2.0 => f.getWeight()
+     }( _ + _)
     
     //friutMap.foreach( id => println(id))
     
@@ -124,23 +112,12 @@ class ListTest {
     val applesAndPears = List(CollectionOfFruit.apple, CollectionOfFruit.pear)
     
     //find large fruit
-    val heavyApplesAndPears : Map[String, List[Int]] = fruit.refineCollect( 
-        g => {
-          val species = g.getSpecies()
-          if (applesAndPears.contains(species)) {
-            (true, species)
-          } else {
-            (false, species)
-          }
-        })( 
-        f => {
-          if (f.getWeight() > 2.0 ) {
-            (true, f.getRfid())
-          } else {
-            (false, f.getRfid())
-          }
-      }
-    )
+    val heavyApplesAndPears : Map[String, List[Int]] = fruit.refineCollect{
+      case x if applesAndPears.contains(x.getSpecies()) => x.getSpecies()
+    }{
+      case y if y.getWeight()  > 2.0 => y.getRfid()
+    }
+        
     val appleIds = heavyApplesAndPears.get(CollectionOfFruit.apple).head
     //appleIds.foreach( id => println(id))
     Assert.assertTrue(appleIds.contains(2))
@@ -165,22 +142,11 @@ class ListTest {
     val applesAndPears = List(CollectionOfFruit.apple, CollectionOfFruit.pear)
     
     //sum large fruit
-    val heavyApplesAndPears : Map[String, Double] = fruit.refineCollectReduce( 
-        g => {
-          val species = g.getSpecies()
-          if (applesAndPears.contains(species)) {
-            (true, species)
-          } else {
-            (false, species)
-          }
-        })( 
-        f => {
-          if (f.getWeight() > 2.0 ) {
-            (true, f.getWeight())
-          } else {
-            (false, f.getWeight())
-          }
-        })( _ + _)
+    val heavyApplesAndPears : Map[String, Double] = fruit.refineCollectReduce {
+       case x if applesAndPears.contains(x.getSpecies()) => x.getSpecies()
+    }{
+      case y if y.getWeight()  > 2.0 => y.getWeight()
+    }( _ + _)
     
     heavyApplesAndPears.foreach( id => println(id))
     val heavyApples = heavyApplesAndPears.get(CollectionOfFruit.apple)
@@ -209,15 +175,9 @@ class ListTest {
     val applesAndPears = List(CollectionOfFruit.apple, CollectionOfFruit.pear)
     
     //find large fruit
-    val heavyApplesAndPears : Map[String, List[Int]] = fruit.refineMap( 
-        g => {
-          val species = g.getSpecies()
-          if (applesAndPears.contains(species)) {
-            (true, species)
-          } else {
-            (false, species)
-          }
-        })( m => m.getRfid())
+    val heavyApplesAndPears : Map[String, List[Int]] = fruit.refineMap{
+      case g if applesAndPears.contains(g.getSpecies()) => g.getSpecies()
+    }( m => m.getRfid())
         
     val appleIds = heavyApplesAndPears.get(CollectionOfFruit.apple).head
     //appleIds.foreach( id => println(id))
@@ -244,17 +204,11 @@ class ListTest {
     val fruit : List[Fruit] = CollectionOfFruit.allFruit
     val applesAndPears = List(CollectionOfFruit.apple, CollectionOfFruit.pear)
     
+    
     //sum large fruit
-    val fruitMap : Map[String, Double] = fruit.refineMapReduce( 
-        g => {
-          val species = g.getSpecies()
-          if (applesAndPears.contains(species)) {
-            (true, species)
-          } else {
-            (false, species)
-          }
-        })( 
-        f => f.getWeight())( _ + _)
+    val fruitMap : Map[String, Double] = fruit.refineMapReduce{
+      case g if applesAndPears.contains(g.getSpecies()) => g.getSpecies()
+    }( f => f.getWeight())( _ + _)
     
     //heavyApplesAndPears.foreach( id => println(id))
     
